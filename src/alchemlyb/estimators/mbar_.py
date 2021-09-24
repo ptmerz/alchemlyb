@@ -83,15 +83,28 @@ class MBAR(BaseEstimator):
                           "verbose": self.verbose}
         solver_protocol = {"method": self.method,
                            "options": solver_options}
-        self._mbar = MBAR_(u_nk.T, N_k,
-                           relative_tolerance=self.relative_tolerance,
-                           initial_f_k=self.initial_f_k,
-                           solver_protocol=(solver_protocol,))
+        try:
+            solver_protocol["method"] = 'adaptive'
+            self._mbar = MBAR_(u_nk.T, N_k,
+                               relative_tolerance=self.relative_tolerance,
+                               initial_f_k=self.initial_f_k,
+                               solver_protocol=(solver_protocol,))
 
-        self.states_ = u_nk.columns.values.tolist()
+            self.states_ = u_nk.columns.values.tolist()
 
-        # set attributes
-        out = self._mbar.getFreeEnergyDifferences(return_theta=True)
+            # set attributes
+            out = self._mbar.getFreeEnergyDifferences(return_theta=True)
+        except:
+            solver_protocol["method"] = 'BFGS'
+            self._mbar = MBAR_(u_nk.T, N_k,
+                               relative_tolerance=self.relative_tolerance,
+                               initial_f_k=self.initial_f_k,
+                               solver_protocol=(solver_protocol,))
+
+            self.states_ = u_nk.columns.values.tolist()
+
+            # set attributes
+            out = self._mbar.getFreeEnergyDifferences(return_theta=True)
         free_energy_differences = [pd.DataFrame(i,
                                    columns=self.states_,
                                    index=self.states_) for i in out]
